@@ -1,5 +1,4 @@
-const BASE_URL = "http://localhost:5000/api/rider";
-
+const BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/rider`;
 // 🔹 Get Rider Profile
 export const fetchProfile = async (getToken) => {
   const token = await getToken();

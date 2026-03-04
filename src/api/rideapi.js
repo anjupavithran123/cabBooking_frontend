@@ -1,7 +1,7 @@
 const token = await getToken();
 
-await fetch("http://localhost:5000/api/rides/create", {
-  method: "POST",
+await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/rides/create`, {
+    method: "POST",
   headers: {
     "Content-Type": "application/json",
     Authorization: `Bearer ${token}`

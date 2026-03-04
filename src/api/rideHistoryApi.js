@@ -1,7 +1,6 @@
 import axios from "axios"; // ✅ ADD THIS
 
-const BASE_URL = "http://localhost:5000/api/rides";
-
+const BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/rides`;
 // Rider ride history
 export const fetchRiderRideHistory = async (riderId) => {
   try {

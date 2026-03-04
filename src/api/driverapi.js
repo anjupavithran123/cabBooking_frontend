@@ -1,8 +1,7 @@
 import axios from "axios";
 
 // Set your backend base URL
-const BASE_URL = "http://localhost:5000/api/driver";
-
+const BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/driver`;
 /**
  * Fetch nearby rides based on driver's location
  * @param {number} lat - Driver's latitude

@@ -3,8 +3,10 @@ export const syncUser = async (getToken) => {
     try {
       const token = await getToken();
   
-      const res = await fetch("http://localhost:5000/api/users", { // ✅ Make sure endpoint matches backend
-        method: "POST",
+      const res = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/users`,
+        {   
+               method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json", // optional, your backend doesn't require body
