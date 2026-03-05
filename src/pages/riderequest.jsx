@@ -82,7 +82,7 @@ export default function RequestRide() {
           dropoff_lat: dropoff.lat,
           dropoff_lng: dropoff.lng,
           ride_type: rideType,
-          status: "awaiting_payment",
+          status: "pending",
           estimated_distance_km: distanceKm,
           estimated_fare: estimatedFare
         }

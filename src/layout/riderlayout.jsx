@@ -16,14 +16,18 @@ export default function RiderLayout() {
 
   // Fetch rider profile for sidebar
   useEffect(() => {
+    if (!userId) return; // Wait until Clerk provides the userId
+  
     const fetchRiderProfile = async () => {
       try {
         const { data, error } = await supabase
           .from("users")
           .select("name, profile_image")
           .eq("clerk_id", userId)
-          .single();
+          .single(); // Expect a single row
+  
         if (error) throw error;
+  
         setRider({
           name: data.name || "Rider",
           profile_image: data.profile_image || "",
@@ -32,7 +36,7 @@ export default function RiderLayout() {
         console.error("Error fetching rider profile:", err);
       }
     };
-
+  
     fetchRiderProfile();
   }, [userId]);
 
