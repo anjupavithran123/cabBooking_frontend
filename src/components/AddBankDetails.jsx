@@ -12,7 +12,6 @@ export default function AddBankDetails() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  // ✅ Load existing details if available
   useEffect(() => {
     fetchBankDetails();
   }, []);
@@ -57,63 +56,71 @@ export default function AddBankDetails() {
   };
 
   return (
-    <div style={styles.container}>
-      <h2>Add Bank Details</h2>
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4">
+      
+      <div className="bg-white shadow-lg rounded-xl p-8 w-full max-w-md">
 
-      {message && <p>{message}</p>}
+        <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
+          Add Bank Details
+        </h2>
 
-      <form onSubmit={handleSubmit} style={styles.form}>
-        <input
-          type="text"
-          name="account_holder_name"
-          placeholder="Account Holder Name"
-          value={form.account_holder_name}
-          onChange={handleChange}
-        />
+        {message && (
+          <div className="mb-4 text-sm text-center bg-green-100 text-green-700 p-2 rounded">
+            {message}
+          </div>
+        )}
 
-        <input
-          type="text"
-          name="bank_account_number"
-          placeholder="Bank Account Number"
-          value={form.bank_account_number}
-          onChange={handleChange}
-        />
+        <form onSubmit={handleSubmit} className="space-y-4">
 
-        <input
-          type="text"
-          name="ifsc_code"
-          placeholder="IFSC Code"
-          value={form.ifsc_code}
-          onChange={handleChange}
-        />
+          <input
+            type="text"
+            name="account_holder_name"
+            placeholder="Account Holder Name"
+            value={form.account_holder_name}
+            onChange={handleChange}
+            className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none"
+          />
 
-        <input
-          type="text"
-          name="vpa"
-          placeholder="UPI ID (optional)"
-          value={form.vpa}
-          onChange={handleChange}
-        />
+          <input
+            type="text"
+            name="bank_account_number"
+            placeholder="Bank Account Number"
+            value={form.bank_account_number}
+            onChange={handleChange}
+            className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none"
+          />
 
-        <button type="submit" disabled={loading}>
-          {loading ? "Saving..." : "Save Details"}
-        </button>
-      </form>
+          <input
+            type="text"
+            name="ifsc_code"
+            placeholder="IFSC Code"
+            value={form.ifsc_code}
+            onChange={handleChange}
+            className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none"
+          />
+
+          <div className="text-center text-gray-400 text-sm">OR</div>
+
+          <input
+            type="text"
+            name="vpa"
+            placeholder="UPI ID (optional)"
+            value={form.vpa}
+            onChange={handleChange}
+            className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none"
+          />
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition"
+          >
+            {loading ? "Saving..." : "Save Details"}
+          </button>
+
+        </form>
+      </div>
+
     </div>
   );
 }
-
-const styles = {
-  container: {
-    maxWidth: "400px",
-    margin: "50px auto",
-    padding: "20px",
-    border: "1px solid #ddd",
-    borderRadius: "8px",
-  },
-  form: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "10px",
-  },
-};

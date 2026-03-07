@@ -5,7 +5,7 @@ import Driverdashboard from "../pages/DriverDashboard.jsx";
 import DriverProfile from "../components/Driverprofile.jsx";
 import DriverRideHistory from "../components/driverhistory.jsx";
 import AddBankDetails from "../components/AddBankDetails.jsx";
-
+import DriverRating from "../components/showratingtoDriver.jsx";
 export default function DriverLayout() {
   const navigate = useNavigate();
   const driverId = localStorage.getItem("driverId");
@@ -87,7 +87,14 @@ export default function DriverLayout() {
           >
             Ride History
           </button>
-
+          <button
+            onClick={() => setActivePage("rating")}
+            className={`w-full text-left px-3 py-2 rounded hover:bg-gray-700 ${
+              activePage === "rating" ? "bg-gray-700" : ""
+            }`}
+          >
+            Rating
+          </button>
           <button
             onClick={() => setActivePage("bankdetails")}
             className={`w-full text-left px-3 py-2 rounded hover:bg-gray-700 ${
@@ -116,6 +123,7 @@ export default function DriverLayout() {
           {activePage === "profile" && <DriverProfile />}
           {activePage === "history" && <DriverRideHistory />}
           {activePage === "bankdetails" && <AddBankDetails />}
+          {activePage === "rating" && <DriverRating driverId={driverId} />}
         </main>
       </div>
     </div>

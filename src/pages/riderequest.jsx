@@ -105,47 +105,107 @@ export default function RequestRide() {
   };
 
   return (
-    <div className="container mt-4">
-      <h2>Request Ride</h2>
+    <div className="min-h-screen bg-gray-100 flex justify-center p-6">
+      <div className="w-full max-w-3xl bg-white rounded-xl shadow-lg p-6">
 
-      <LocationSearch
-        placeholder="Pickup Location"
-        setLocation={setPickup}
-        defaultLocation={pickup}
-      />
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">
+          Request a Ride
+        </h2>
 
-      <LocationSearch
-        placeholder="Dropoff Location"
-        setLocation={setDropoff}
-      />
+        {/* Location Inputs */}
+        <div className="space-y-3">
+          <LocationSearch
+            placeholder="Pickup Location"
+            setLocation={setPickup}
+            defaultLocation={pickup}
+          />
 
-      {distanceKm && estimatedFare && (
-        <div className="mt-2 p-2 border rounded">
-          <p>Distance: {distanceKm} km</p>
-          <p>Fare: ₹ {estimatedFare}</p>
+          <LocationSearch
+            placeholder="Dropoff Location"
+            setLocation={setDropoff}
+          />
         </div>
-      )}
 
-      <select
-        className="form-select mt-2"
-        value={rideType}
+        {/* Fare Info */}
+        {distanceKm && estimatedFare && (
+          <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg flex justify-between">
+            <div>
+              <p className="text-gray-600 text-sm">Distance</p>
+              <p className="font-semibold">{distanceKm} km</p>
+            </div>
+
+            <div>
+              <p className="text-gray-600 text-sm">Estimated Fare</p>
+              <p className="font-semibold text-green-600">
+                ₹ {estimatedFare}
+              </p>
+            </div>
+          </div>
+        )}
+
+     {/* Ride Type */}
+<div className="mt-5">
+  <p className="font-medium mb-2 text-gray-700">Select Ride Type</p>
+
+  <div className="flex gap-6">
+
+    <label className="flex items-center gap-2 cursor-pointer">
+      <input
+        type="radio"
+        value="economy"
+        checked={rideType === "economy"}
         onChange={(e) => setRideType(e.target.value)}
-      >
-        <option value="economy">Economy</option>
-        <option value="premium">Premium</option>
-        <option value="auto">Auto</option>
-      </select>
-
-      <button className="btn btn-primary mt-3" onClick={handleRequest}>
-        Request Ride
-      </button>
-
-      <RideMap
-        pickup={pickup}
-        dropoff={dropoff}
-        setPickup={setPickup}
-        setDropoff={setDropoff}
+        className="accent-blue-600"
       />
+      <span className="text-gray-700">Economy</span>
+    </label>
+
+    <label className="flex items-center gap-2 cursor-pointer">
+      <input
+        type="radio"
+        value="premium"
+        checked={rideType === "premium"}
+        onChange={(e) => setRideType(e.target.value)}
+        className="accent-blue-600"
+      />
+      <span className="text-gray-700">Premium</span>
+    </label>
+
+    <label className="flex items-center gap-2 cursor-pointer">
+      <input
+        type="radio"
+        value="auto"
+        checked={rideType === "auto"}
+        onChange={(e) => setRideType(e.target.value)}
+        className="accent-blue-600"
+      />
+      <span className="text-gray-700">Auto</span>
+    </label>
+
+  </div>
+</div>
+
+{/* Request Button */}
+<div className="mt-6 flex justify-center">
+  <button
+    onClick={handleRequest}
+    className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-lg transition"
+  >
+    Request Ride
+  </button>
+</div>
+
+        {/* Map */}
+        <div className="mt-6 rounded-lg overflow-hidden border">
+          <RideMap
+            pickup={pickup}
+            dropoff={dropoff}
+            setPickup={setPickup}
+            setDropoff={setDropoff}
+          />
+        </div>
+
+      </div>
     </div>
   );
 }
@@ -154,11 +214,13 @@ function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const dLat = deg2rad(lat2 - lat1);
   const dLon = deg2rad(lon2 - lon1);
+
   const a =
     Math.sin(dLat / 2) ** 2 +
     Math.cos(deg2rad(lat1)) *
       Math.cos(deg2rad(lat2)) *
       Math.sin(dLon / 2) ** 2;
+
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }

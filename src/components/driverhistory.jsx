@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import supabase from "../config/supabase.js";
 
-// Helper to format fare
 const formatFare = (fare) => (fare != null ? `₹${fare.toFixed(2)}` : "N/A");
 
 export default function DriverRideHistory() {
-  const driverId = localStorage.getItem("driverId"); // ✅ stored driverId
+  const driverId = localStorage.getItem("driverId");
   const [rides, setRides] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -38,39 +37,89 @@ export default function DriverRideHistory() {
     fetchRides();
   }, [driverId]);
 
-  if (!driverId) return <p>Driver not logged in.</p>;
-  if (loading) return <p>Loading driver ride history...</p>;
-  if (error) return <p className="text-red-600">{error}</p>;
-  if (rides.length === 0) return <p>No ride history found.</p>;
+  const getStatusColor = (status) => {
+    if (status === "completed") return "bg-green-100 text-green-700";
+    if (status === "cancelled") return "bg-red-100 text-red-700";
+    if (status === "ongoing") return "bg-yellow-100 text-yellow-700";
+    return "bg-gray-100 text-gray-600";
+  };
+
+  if (!driverId)
+    return (
+      <div className="p-6 text-center text-gray-600">
+        Driver not logged in.
+      </div>
+    );
+
+  if (loading)
+    return (
+      <div className="p-6 text-center text-gray-500 animate-pulse">
+        Loading ride history...
+      </div>
+    );
+
+  if (error)
+    return (
+      <div className="p-6 text-center text-red-600 font-medium">
+        {error}
+      </div>
+    );
+
+  if (rides.length === 0)
+    return (
+      <div className="p-6 text-center text-gray-500">
+        No ride history found.
+      </div>
+    );
 
   return (
-    <div>
-      <h2 className="text-xl font-bold mb-4">Driver Ride History</h2>
+    <div className="max-w-3xl mx-auto mt-6 px-4">
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">
+        🚖 Driver Ride History
+      </h2>
 
-      <ul className="space-y-3">
+      <div className="space-y-4">
         {rides.map((ride) => (
-          <li key={ride.id} className="border p-3 rounded bg-white shadow-sm">
-            <p>
-              <strong>Pickup:</strong> {ride.pickup_address || "Unknown"}
-            </p>
-            <p>
-              <strong>Dropoff:</strong> {ride.dropoff_address || "Unknown"}
-            </p>
-            <p>
-              <strong>Status:</strong> {ride.status || "Unknown"}
-            </p>
-            <p>
-              <strong>Fare:</strong> {formatFare(ride.fare)}
-            </p>
-            <p>
-              <strong>Date:</strong>{" "}
+          <div
+            key={ride.id}
+            className="bg-white shadow-md rounded-xl p-5 hover:shadow-lg transition"
+          >
+            {/* Status + Fare */}
+            <div className="flex justify-between items-center mb-3">
+              <span
+                className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(
+                  ride.status
+                )}`}
+              >
+                {ride.status || "Unknown"}
+              </span>
+{/* 
+              <span className="text-lg font-bold text-gray-800">
+                {formatFare(ride.fare)}
+              </span> */}
+            </div>
+
+            {/* Pickup */}
+            <div className="flex items-start gap-2 text-sm text-gray-700">
+              <span className="text-green-600 font-bold">●</span>
+              <p>{ride.pickup_address || "Unknown pickup location"}</p>
+            </div>
+
+            {/* Dropoff */}
+            <div className="flex items-start gap-2 text-sm text-gray-700 mt-1">
+              <span className="text-red-500 font-bold">●</span>
+              <p>{ride.dropoff_address || "Unknown dropoff location"}</p>
+            </div>
+
+            {/* Date */}
+            <div className="text-xs text-gray-500 mt-3">
               {ride.created_at
                 ? new Date(ride.created_at).toLocaleString()
-                : "Unknown"}
-            </p>
-          </li>
+                : "Unknown date"}
+            </div>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }

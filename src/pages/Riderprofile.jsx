@@ -205,38 +205,7 @@ export default function RiderDashboard() {
           </div>
         </div>
 
-        {/* Ride History */}
-        <div className="bg-white shadow-xl rounded-2xl p-6">
-          <h2 className="text-xl font-semibold mb-4">
-            Ride History
-          </h2>
-
-          {rides.length === 0 ? (
-            <p className="text-gray-500">No rides yet.</p>
-          ) : (
-            <div className="grid md:grid-cols-2 gap-4">
-              {rides.map((ride) => (
-                <div
-                  key={ride.id}
-                  className="border p-4 rounded-xl hover:shadow-lg transition"
-                >
-                  <p className="font-medium">
-                    {ride.pickup_location}
-                  </p>
-                  <p className="text-gray-500">
-                    To: {ride.drop_location}
-                  </p>
-                  <p className="text-sm text-gray-400 mt-2">
-                    {new Date(ride.created_at).toLocaleString()}
-                  </p>
-                  <p className="mt-2 font-semibold text-orange-600">
-                    ₹ {ride.fare}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+    
 
       </div>
     </div>

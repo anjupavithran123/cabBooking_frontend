@@ -104,6 +104,7 @@ export default function RiderLayout() {
           >
             Ride History
           </button>
+      
         </nav>
       </aside>
 

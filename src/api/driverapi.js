@@ -74,3 +74,27 @@ export const updateDriverLocation = async (driverId, lat, lng) => {
 };
 
 
+export const getDriverLocation = async (rideId) => {
+  try {
+    const res = await axios.get(`${BASE_URL}/driver-location`, {
+      params: {
+        ride_id: rideId,
+      },
+    });
+
+    return res.data;
+  } catch (err) {
+    console.error(
+      "Error fetching driver location:",
+      err.response?.data || err.message
+    );
+    return null;
+  }
+};
+export const completeRide = async (rideId) => {
+  const res = await axios.post(`${BASE_URL}/rides/complete`, {
+    ride_id: rideId,
+  });
+
+  return res.data;
+};

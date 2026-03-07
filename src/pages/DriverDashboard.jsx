@@ -1,205 +1,230 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "@clerk/clerk-react";
-import { fetchNearbyRides, acceptRide ,updateDriverLocation} from "../api/driverapi";
+import {
+  fetchNearbyRides,
+  acceptRide,
+  updateDriverLocation,
+  completeRide,
+} from "../api/driverapi";
 import RideMap from "../components/RideMap";
 
 export default function DriverDashboard() {
   const driverId = localStorage.getItem("driverId");
 
-  console.log("DriverId:", driverId);
-
   const [location, setLocation] = useState({ lat: null, lng: null });
-  const [rides, setRides] = useState([]);
+  const [pendingRides, setPendingRides] = useState([]);
+  const [acceptedRide, setAcceptedRide] = useState(null); // separate state
   const [loadingRides, setLoadingRides] = useState(true);
   const [accepting, setAccepting] = useState(false);
-  const [geoError, setGeoError] = useState(null);
+  const [online, setOnline] = useState(true);
+
   const [manualLat, setManualLat] = useState("");
   const [manualLng, setManualLng] = useState("");
 
-  // Get driver location automatically
+  // =============================
+  // Driver GPS tracking
+  // =============================
   useEffect(() => {
-    if (!driverId) return; // wait until driverId exists
-
-    if (!navigator.geolocation) {
-      console.log("Geolocation not supported");
-      return;
-    }
+    if (!driverId || !online) return;
+    if (manualLat && manualLng) return;
+    if (!navigator.geolocation) return;
 
     let lastUpdate = 0;
 
-    const watchId = navigator.geolocation.watchPosition(
-      async (pos) => {
-        const now = Date.now();
+    const watchId = navigator.geolocation.watchPosition(async (pos) => {
+      const now = Date.now();
+      if (now - lastUpdate > 5000) {
+        lastUpdate = now;
 
-        if (now - lastUpdate > 5000) { // update every 5 sec
-          lastUpdate = now;
+        const newLocation = {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        };
 
-          const newLocation = {
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-          };
-
-          console.log("Live driver location:", newLocation);
-
-          setLocation(newLocation);
-
-          // 🔥 PUT IT RIGHT HERE
-          await updateDriverLocation(
-            driverId,
-            newLocation.lat,
-            newLocation.lng
-          );
-        }
-      },
-      (err) => {
-        console.error("Location error:", err);
-      },
-      {
-        enableHighAccuracy: true,
-        maximumAge: 0,
-        timeout: 5000,
+        setLocation(newLocation);
+        await updateDriverLocation(driverId, newLocation.lat, newLocation.lng);
       }
-    );
+    });
 
     return () => navigator.geolocation.clearWatch(watchId);
+  }, [driverId, manualLat, manualLng, online]);
 
-  }, [driverId]); // important dependency
-
-  
-
-
-  // Fetch nearby rides whenever location changes
+  // =============================
+  // Fetch pending rides (auto refresh)
+  // =============================
   useEffect(() => {
+    if (!location.lat || !location.lng || !online) return;
+
     const loadRides = async () => {
-      if (!location.lat || !location.lng) return;
       setLoadingRides(true);
       try {
-        const nearbyRides = await fetchNearbyRides(location.lat, location.lng,  driverId);
-        console.log("Frontend received rides:", nearbyRides); // 👈 ADD THIS
-        setRides(nearbyRides);
+        const nearbyRides = await fetchNearbyRides(
+          location.lat,
+          location.lng,
+          driverId
+        );
+
+        const now = new Date();
+        const filtered = nearbyRides.filter((ride) => {
+          const rideTime = new Date(ride.created_at);
+          const diffMinutes = (now - rideTime) / 60000;
+          // only keep pending rides
+          return ride.status === "pending" && diffMinutes <= 5;
+        });
+
+        setPendingRides(filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
       } catch (err) {
         console.error(err);
-      } finally {
-        setLoadingRides(false);
       }
+      setLoadingRides(false);
     };
-    loadRides();
-  }, [location]);
 
-  // Accept ride
+    loadRides();
+    const interval = setInterval(loadRides, 8000);
+    return () => clearInterval(interval);
+  }, [location, online]);
+
+  // =============================
+  // Accept Ride
+  // =============================
   const handleAcceptRide = async (rideId) => {
-    if (!rideId) return;
-  
+    if (acceptedRide) {
+      alert("Complete current ride first");
+      return;
+    }
+
     setAccepting(true);
     try {
-      const updatedRide = await acceptRide(rideId, driverId);
-  
-      // ✅ Update ride status instead of removing
-      setRides((prevRides) =>
-        prevRides.map((r) =>
-          r.id === rideId
-            ? { ...r, status: "accepted" } // or updatedRide.status if backend returns it
-            : r
-        )
-      );
-  
+      await acceptRide(rideId, driverId);
+      const ride = pendingRides.find((r) => r.id === rideId);
+      if (ride) {
+        setAcceptedRide({ ...ride, status: "accepted", driver_id: driverId });
+        setPendingRides((prev) => prev.filter((r) => r.id !== rideId));
+      }
     } catch (err) {
-      console.error("Failed to accept ride:", err);
       alert("Failed to accept ride");
-    } finally {
-      setAccepting(false);
+    }
+    setAccepting(false);
+  };
+
+  // =============================
+  // Complete Ride
+  // =============================
+  const handleCompleteRide = async (rideId) => {
+    try {
+      await completeRide(rideId);
+      setAcceptedRide(null);
+      alert("Ride Completed 🚕");
+    } catch (err) {
+      alert("Failed to complete ride");
     }
   };
 
-  // Manual location fallback
+  // =============================
+  // Manual Location
+  // =============================
   const setManualLocation = () => {
     const lat = parseFloat(manualLat);
     const lng = parseFloat(manualLng);
+
     if (!isNaN(lat) && !isNaN(lng)) {
-      setLocation({ lat, lng });
-      setGeoError(null);
+      const newLocation = { lat, lng };
+      setLocation(newLocation);
+      updateDriverLocation(driverId, lat, lng);
     } else {
       alert("Enter valid coordinates");
     }
   };
 
+  // =============================
+  // UI
+  // =============================
   return (
-    <div className="p-4">
-      <h2 className="text-xl font-bold mb-4">Driver Dashboard</h2>
+    <div className="p-6 bg-gray-100 min-h-screen">
+      <h2 className="text-3xl font-bold mb-6 text-gray-800">Driver Dashboard</h2>
 
-      {geoError && <p className="text-red-500 mb-2">{geoError}</p>}
+      {/* Online Toggle */}
+      <div className="mb-6">
+        <button
+          onClick={() => setOnline(!online)}
+          className={`px-5 py-2 rounded-full text-white font-medium transition-colors duration-200 ${
+            online ? "bg-green-600 hover:bg-green-700" : "bg-red-500 hover:bg-red-600"
+          }`}
+        >
+          {online ? "Online" : "Offline"}
+        </button>
+      </div>
 
-      {/* Manual location input */}
-      <div className="mb-4 flex gap-2 items-center">
+      {/* Manual Location */}
+      <div className="mb-6 flex gap-2 flex-wrap">
         <input
           type="number"
           placeholder="Latitude"
           value={manualLat}
           onChange={(e) => setManualLat(e.target.value)}
-          className="border px-2 py-1 rounded"
+          className="border p-2 rounded w-32"
         />
         <input
           type="number"
           placeholder="Longitude"
           value={manualLng}
           onChange={(e) => setManualLng(e.target.value)}
-          className="border px-2 py-1 rounded"
+          className="border p-2 rounded w-32"
         />
         <button
           onClick={setManualLocation}
-          className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
         >
           Set Location
         </button>
       </div>
 
+      {/* Accepted Ride */}
+      {acceptedRide && (
+        <div className="bg-green-50 border border-green-300 p-4 rounded-lg mb-6 shadow-md">
+          <h3 className="font-bold text-xl mb-3 text-green-800">Current Ride</h3>
+          <p><b>Pickup:</b> {acceptedRide.pickup_address}</p>
+          <p><b>Drop:</b> {acceptedRide.dropoff_address}</p>
+          <p><b>Ride Type:</b> {acceptedRide.ride_type}</p>
+          <button
+            onClick={() => handleCompleteRide(acceptedRide.id)}
+            className="mt-4 bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700 transition-colors"
+          >
+            Complete Ride
+          </button>
+        </div>
+      )}
+
+      {/* Pending Rides */}
+      <h3 className="text-2xl font-semibold mb-4 text-gray-700">Nearby Ride Requests</h3>
       {loadingRides ? (
-        <p>Loading nearby rides...</p>
-      ) : rides.length === 0 ? (
-        <p>No rides nearby.</p>
+        <p className="text-gray-500">Searching rides...</p>
+      ) : pendingRides.length === 0 ? (
+        <p className="text-gray-500">No nearby ride requests</p>
       ) : (
-        <ul>
-        {rides.map((ride) => (
-          <li key={ride.id} className="mb-3 p-3 border rounded relative">
-      
-            {/* ✅ Status Badge */}
-            {ride.status === "accepted" && (
-              <span className="absolute top-2 right-2 bg-green-600 text-white text-xs px-2 py-1 rounded-full">
-                Accepted
-              </span>
-            )}
-      
-            <p>
-              <strong>Pickup:</strong> {ride.pickup_address} (
-              {ride.pickup_lat?.toFixed(4)}, {ride.pickup_lng?.toFixed(4)})
-            </p>
-      
-            <p>
-              <strong>Dropoff:</strong> {ride.dropoff_address} (
-              {ride.dropoff_lat?.toFixed(4)}, {ride.dropoff_lng?.toFixed(4)})
-            </p>
-      
-            <p>
-              <strong>Type:</strong> {ride.ride_type}
-            </p>
-      
-            {/* ✅ Hide button if already accepted */}
-            {ride.status !== "accepted" && (
+        <div className="grid md:grid-cols-2 gap-4">
+          {pendingRides.map((ride) => (
+            <div key={ride.id} className="bg-white shadow-md p-4 rounded-lg hover:shadow-lg transition-shadow">
+              <p><b>Pickup:</b> {ride.pickup_address}</p>
+              <p><b>Drop:</b> {ride.dropoff_address}</p>
+              <p><b>Ride Type:</b> {ride.ride_type}</p>
               <button
                 onClick={() => handleAcceptRide(ride.id)}
                 disabled={accepting}
-                className="mt-2 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors w-full"
               >
                 {accepting ? "Accepting..." : "Accept Ride"}
               </button>
-            )}
-          </li>
-        ))}
-      </ul>
+            </div>
+          ))}
+        </div>
       )}
 
       {/* Map */}
-      {rides.length > 0 && <RideMap rides={rides} driverLocation={location} />}
+      {location.lat && (
+        <div className="mt-8 rounded-lg overflow-hidden shadow-md">
+          <RideMap rides={acceptedRide ? [acceptedRide] : pendingRides} driverLocation={location} />
+        </div>
+      )}
     </div>
   );
 }
